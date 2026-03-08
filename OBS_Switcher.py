@@ -36,15 +36,12 @@ except ImportError:
         print("  pip3 install obs-websocket-py")
         exit(1)
 
-# Configuration — loaded from .env
-REMOTE_HOST  = os.getenv('REMOTE_HOST', '192.168.1.100')
-REMOTE_PORT  = int(os.getenv('REMOTE_PORT', 5555))
-OBS_HOST     = os.getenv('OBS_HOST', 'localhost')
-OBS_PORT     = int(os.getenv('OBS_PORT', 4455))
-OBS_PASSWORD = os.getenv('OBS_PASSWORD', '')
-
-if not OBS_PASSWORD:
-    print("⚠️  WARNING: OBS_PASSWORD is not set in your .env file")
+# Configuration
+REMOTE_HOST = '192.168.1.100'  # IP of the computer to monitor (CHANGE THIS!)
+REMOTE_PORT = 5555
+OBS_HOST = 'localhost'
+OBS_PORT = 4455
+OBS_PASSWORD = 'Fincastle629'  # Change to your OBS WebSocket password
 
 # Scene names - UPDATE THESE to match your OBS scene names exactly
 POWERPOINT_PRESENTATION_SCENE = os.getenv('SCENE_POWERPOINT', 'Live Stream Screen Powerpoint & Video')
