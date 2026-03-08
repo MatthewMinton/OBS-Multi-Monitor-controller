@@ -56,21 +56,39 @@ This is a two-script system:
 | 🎥 Video actively playing (VLC, QuickTime, browser, etc.) | `Powerpoint` |
 | 🖥️ Everything else (default) | `Live Stream Screen` |
 
-> ⚠️ Scene names are **case-sensitive** and must exactly match your OBS scene names. Update them at the top of the client script.
+> ⚠️ Scene names are **case-sensitive** and must exactly match your OBS scene names. Update them in your `.env` file.
 
 ---
 
 ## 📦 Requirements
 
-### 🍎 OBS Mac (client)
+### Installing packages
 
-Install **one** of these WebSocket libraries — the script supports both:
+A single `requirements.txt` handles all platforms. Run this once on each machine before starting:
 
-```bash
-pip3 install obsws-python
-# OR
-pip3 install obs-websocket-py
+**🪟 Windows:**
+```cmd
+python -m pip install -r requirements.txt
 ```
+
+**🍎 Mac:**
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+> ⚠️ Make sure you run this with the same Python version your scripts will use. If you have multiple Python versions installed, use the full path:
+> ```cmd
+> C:\path\to\your\python.exe -m pip install -r requirements.txt
+> ```
+
+Platform-specific packages are handled automatically:
+- `pywin32` and `psutil` only install on Windows
+- `obsws-python` only installs on Mac
+- `python-dotenv` installs on both
+
+---
+
+### 🍎 OBS Mac (client)
 
 OBS must have the WebSocket server enabled:
 > OBS → Tools → WebSocket Server Settings → Enable WebSocket Server
@@ -92,17 +110,82 @@ No third-party libraries required — uses Python's standard library and macOS's
 
 ### 🪟 Monitored Windows PC (server)
 
+No special permissions required on Windows. All dependencies are handled by `requirements.txt`.
+
+---
+
+## 🔐 Environment Variables & Credentials
+
+Credentials are loaded from a `.env` file so you never hardcode passwords or IPs into the script — and never accidentally push them to GitHub.
+
+### Setup
+
+**1. Copy the example file and fill in your values:**
 ```bash
-pip install pywin32 psutil
+cp .env.example .env
 ```
 
-No special permissions required on Windows.
+**2. Edit `.env` for the Mac running OBS (client):**
+```env
+# OBS WebSocket credentials
+OBS_PASSWORD=your_obs_websocket_password_here
+OBS_HOST=localhost
+OBS_PORT=4455
+
+# IP of the computer being monitored
+REMOTE_HOST=192.168.1.x
+REMOTE_PORT=5555
+
+# OBS Scene names — must match exactly (case-sensitive)
+SCENE_POWERPOINT=Live Stream Screen Powerpoint & Video
+SCENE_VIDEO=Powerpoint
+SCENE_DEFAULT=Live Stream Screen
+```
+
+**3. Edit `.env` for the Windows monitored computer (server):**
+```env
+# Server port
+HOST=0.0.0.0
+PORT=5555
+```
+
+> ⚠️ **Never commit `.env` to GitHub.** It is already listed in `.gitignore`.
+> Commit `.env.example` instead — it shows others what variables are needed without exposing your values.
+
+### Files
+
+| File | Committed to Git | Purpose |
+|------|-----------------|---------|
+| `.env` | ❌ No — in `.gitignore` | Your actual credentials |
+| `.env.example` | ✅ Yes | Template showing required variables |
+| `.gitignore` | ✅ Yes | Prevents `.env` from being committed |
+| `requirements.txt` | ✅ Yes | Package list for all platforms |
 
 ---
 
 ## 🚀 Setup
 
-### Step 1 — Start the server on the monitored computer
+### Step 1 — Install packages on each machine
+
+**🪟 Windows:**
+```cmd
+python -m pip install -r requirements.txt
+```
+
+**🍎 Mac:**
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+---
+
+### Step 2 — Configure your `.env` files
+
+Copy `.env.example` to `.env` on each machine and fill in your values (see Environment Variables section above).
+
+---
+
+### Step 3 — Start the server on the monitored computer
 
 **🍎 Mac:**
 ```bash
@@ -110,7 +193,7 @@ python3 obs_monitor_server_mac.py
 ```
 
 **🪟 Windows:**
-```bash
+```cmd
 python obs_monitor_server_windows.py
 ```
 
@@ -120,28 +203,11 @@ When it starts, it will print its local IP address:
   Set REMOTE_HOST = '192.168.1.50' in the client script
 ```
 
----
-
-### Step 2 — Configure the client script
-
-Open `obs_scene_switcher_client.py` and update the configuration block at the top:
-
-```python
-REMOTE_HOST = '192.168.1.50'   # ← IP printed by the server in Step 1
-REMOTE_PORT = 5555
-OBS_HOST    = 'localhost'
-OBS_PORT    = 4455
-OBS_PASSWORD = 'your_password'  # From OBS WebSocket Server Settings
-
-# Update these to match your actual OBS scene names exactly
-POWERPOINT_PRESENTATION_SCENE = "Live Stream Screen Powerpoint & Video"
-VIDEO_PLAYING_SCENE            = "Powerpoint"
-DEFAULT_SCENE                  = "Live Stream Screen"
-```
+Update `REMOTE_HOST` in the `.env` on your OBS Mac to match.
 
 ---
 
-### Step 3 — Start the client on the OBS Mac
+### Step 4 — Start the client on the OBS Mac
 
 ```bash
 python3 obs_scene_switcher_client.py
@@ -237,7 +303,7 @@ POLL_INTERVAL = 0.5   # seconds — change to 0.25 for faster or 1.0 for slower
 <summary><b>❌ Client can't connect to server</b></summary>
 
 - Make sure the server script is running **before** starting the client
-- Confirm the IP address in `REMOTE_HOST` matches the server machine
+- Confirm the IP address in `REMOTE_HOST` in your `.env` matches the server machine
 - Check that port `5555` is not blocked by a firewall
   - **Mac:** System Settings → Network → Firewall
   - **Windows:** Windows Defender Firewall → Allow an app through firewall
@@ -248,7 +314,7 @@ POLL_INTERVAL = 0.5   # seconds — change to 0.25 for faster or 1.0 for slower
 <summary><b>❌ OBS won't connect</b></summary>
 
 - Make sure OBS is open and WebSocket server is enabled
-- Double-check the password in `OBS_PASSWORD` matches OBS exactly
+- Double-check `OBS_PASSWORD` in your `.env` matches OBS exactly
 - Default OBS WebSocket port is `4455`
 
 </details>
@@ -256,8 +322,8 @@ POLL_INTERVAL = 0.5   # seconds — change to 0.25 for faster or 1.0 for slower
 <details>
 <summary><b>❌ Scene doesn't switch</b></summary>
 
-- Scene names are **case-sensitive** — copy them exactly from OBS
-- Open the OBS scene list and verify the names match what's in the config
+- Scene names are **case-sensitive** — copy them exactly from OBS into your `.env`
+- Open the OBS scene list and verify the names match
 
 </details>
 
@@ -276,6 +342,19 @@ POLL_INTERVAL = 0.5   # seconds — change to 0.25 for faster or 1.0 for slower
 - Make sure you're in **Slide Show** view, not Presenter View editing mode
 - The script looks for a fullscreen window or a window title containing "Slide Show"
 - Check Task Manager → Details to confirm the process name is `POWERPNT.EXE`
+
+</details>
+
+<details>
+<summary><b>❌ Packages installing to wrong Python version (Windows)</b></summary>
+
+- You may have multiple Python versions installed
+- Always use `python -m pip install` instead of just `pip install`
+- Or specify the full Python path:
+  ```cmd
+  C:\path\to\python.exe -m pip install -r requirements.txt
+  ```
+- In VS Code: `Ctrl + Shift + P` → Python: Select Interpreter → choose your version
 
 </details>
 
@@ -324,49 +403,3 @@ Monitored Computer              OBS Mac
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 MIT — free to use, modify, and distribute.
-
----
-
-## 🔐 Environment Variables & Credentials
-
-Credentials are loaded from a `.env` file so you never hardcode passwords or IPs into the script — and never accidentally push them to GitHub.
-
-### Setup
-
-**1. Install python-dotenv:**
-```bash
-pip3 install python-dotenv
-```
-
-**2. Copy the example file and fill in your values:**
-```bash
-cp .env.example .env
-```
-
-**3. Edit `.env`:**
-```env
-# OBS WebSocket credentials
-OBS_PASSWORD=your_obs_websocket_password_here
-OBS_HOST=localhost
-OBS_PORT=4455
-
-# IP of the computer being monitored
-REMOTE_HOST=192.168.1.x
-REMOTE_PORT=5555
-
-# OBS Scene names — must match exactly (case-sensitive)
-SCENE_POWERPOINT=Live Stream Screen Powerpoint & Video
-SCENE_VIDEO=Powerpoint
-SCENE_DEFAULT=Live Stream Screen
-```
-
-> ⚠️ **Never commit `.env` to GitHub.** It is already listed in `.gitignore`.
-> Commit `.env.example` instead — it shows others what variables are needed without exposing your values.
-
-### Files
-
-| File | Committed to Git | Purpose |
-|------|-----------------|---------|
-| `.env` | ❌ No — in `.gitignore` | Your actual credentials |
-| `.env.example` | ✅ Yes | Template showing required variables |
-| `.gitignore` | ✅ Yes | Prevents `.env` from being committed |
