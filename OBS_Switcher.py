@@ -3,11 +3,19 @@ OBS Auto Scene Switcher - CLIENT SCRIPT
 Run this on the Mac running OBS.
 Switches between PowerPoint and Video scenes automatically.
 Supports both obs-websocket-py and obsws-python libraries.
+
+Credentials are loaded from a .env file — never hardcoded.
+Copy .env.example to .env and fill in your values.
 """
 
 import socket
 import json
 import time
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Try newer library first, fall back to older one
 USING_NEW_LIB = False
@@ -28,17 +36,20 @@ except ImportError:
         print("  pip3 install obs-websocket-py")
         exit(1)
 
-# Configuration
-REMOTE_HOST = '192.168.1.100'  # IP of the computer to monitor (CHANGE THIS!)
-REMOTE_PORT = 5555
-OBS_HOST = 'localhost'
-OBS_PORT = 4455
-OBS_PASSWORD = 'Fincastle629'  # Change to your OBS WebSocket password
+# Configuration — loaded from .env
+REMOTE_HOST  = os.getenv('REMOTE_HOST', '192.168.1.100')
+REMOTE_PORT  = int(os.getenv('REMOTE_PORT', 5555))
+OBS_HOST     = os.getenv('OBS_HOST', 'localhost')
+OBS_PORT     = int(os.getenv('OBS_PORT', 4455))
+OBS_PASSWORD = os.getenv('OBS_PASSWORD', '')
+
+if not OBS_PASSWORD:
+    print("⚠️  WARNING: OBS_PASSWORD is not set in your .env file")
 
 # Scene names - UPDATE THESE to match your OBS scene names exactly
-POWERPOINT_PRESENTATION_SCENE = "Live Stream Screen Powerpoint & Video"
-VIDEO_PLAYING_SCENE = "Powerpoint"
-DEFAULT_SCENE = "Live Stream Screen"
+POWERPOINT_PRESENTATION_SCENE = os.getenv('SCENE_POWERPOINT', 'Live Stream Screen Powerpoint & Video')
+VIDEO_PLAYING_SCENE            = os.getenv('SCENE_VIDEO', 'Powerpoint')
+DEFAULT_SCENE                  = os.getenv('SCENE_DEFAULT', 'Live Stream Screen')
 
 
 class OBSSceneSwitcher:
@@ -51,7 +62,6 @@ class OBSSceneSwitcher:
         """Connect to OBS WebSocket"""
         try:
             if USING_NEW_LIB:
-                # obsws-python style
                 self.ws = obs.ReqClient(
                     host=OBS_HOST,
                     port=OBS_PORT,
@@ -60,7 +70,6 @@ class OBSSceneSwitcher:
                 response = self.ws.get_current_program_scene()
                 self.current_scene = response.current_program_scene_name
             else:
-                # obs-websocket-py style
                 self.ws = obsws(OBS_HOST, OBS_PORT, OBS_PASSWORD)
                 self.ws.connect()
                 response = self.ws.call(obs_requests.GetCurrentProgramScene())
@@ -104,7 +113,6 @@ class OBSSceneSwitcher:
 
         content_type = monitor_info.get("content_type", "other")
 
-        # Log content changes
         if content_type != self.last_content_type:
             self.last_content_type = content_type
             if "window_title" in monitor_info:
@@ -119,7 +127,6 @@ class OBSSceneSwitcher:
             else:
                 print(f"ℹ Content type: {content_type}")
 
-        # Map content type to scene
         if content_type == "powerpoint_presentation":
             return POWERPOINT_PRESENTATION_SCENE
         elif content_type == "video":
