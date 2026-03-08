@@ -33,7 +33,7 @@ REMOTE_HOST = '192.168.1.100'  # IP of the computer to monitor (CHANGE THIS!)
 REMOTE_PORT = 5555
 OBS_HOST = 'localhost'
 OBS_PORT = 4455
-OBS_PASSWORD = 'Fincastle629'  # Change to your OBS WebSocket password
+OBS_PASSWORD = 'your password'  # Change to your OBS WebSocket password
 
 # Scene names - UPDATE THESE to match your OBS scene names exactly
 POWERPOINT_PRESENTATION_SCENE = "Live Stream Screen Powerpoint & Video"
